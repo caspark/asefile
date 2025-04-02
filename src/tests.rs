@@ -495,6 +495,17 @@ fn slices() {
 }
 
 #[test]
+fn user_data_sprite_new_palette() {
+    // if the sprite's palette has alpha (as in this test sprite) or more than 256 colors, the new
+    // palette will be used by aseprite; we should recognize the new palette as a valid marker for
+    // sprite user data.
+    let f = load_test_file("user_data_new_palette");
+    let user_data = f.sprite_user_data().unwrap();
+    let expected = test_user_data("test_user_data_sprite", COLOR_GREEN);
+    assert_eq!(*user_data, expected);
+}
+
+#[test]
 fn user_data_sprite() {
     let f = load_test_file("user_data");
     let user_data = f.sprite_user_data().unwrap();
