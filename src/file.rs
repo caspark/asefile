@@ -311,12 +311,12 @@ impl AsepriteFile {
     ///
     /// Can fail if the `frame` does not exist, an unsupported feature is
     /// used, or the file is malformed.
-    fn frame_image(&self, frame: u16) -> RgbaImage {
+    fn frame_image(&self, frame: u16, filter: impl Fn(Layer) -> bool) -> RgbaImage {
         let mut image = RgbaImage::new(self.width as u32, self.height as u32);
 
         for (layer_id, cel) in self.framedata.frame_cels(frame) {
             // TODO: Ensure this is always done in layer order (pre-sort Cels?)
-            if !self.layer(layer_id).is_visible() {
+            if !filter(self.layer(layer_id)) {
                 continue;
             }
             self.write_cel(&mut image, cel);
@@ -437,8 +437,19 @@ impl<'a> Frame<'a> {
     /// layers according to their blend mode. Skips invisible layers (i.e.,
     /// layers with a deactivated eye icon).
     ///
+    /// This is a convenience method that calls [Frame::image_filter_layers]
+    /// with a filter that only includes visible layers.
     pub fn image(&self) -> RgbaImage {
-        self.file.frame_image(self.index as u16)
+        self.image_filter_layers(|layer| layer.is_visible())
+    }
+
+    /// Construct the image belonging to the specific animation frame, but only
+    /// include the layers that the given filter function returns true for.
+    ///
+    /// Passing a filter which always returns true will include all layers,
+    /// including invisible (hidden) layers.
+    pub fn image_filter_layers(&self, filter: impl Fn(Layer) -> bool) -> RgbaImage {
+        self.file.frame_image(self.index as u16, filter)
     }
 
     /// Frame ID, i.e., the frame number.
